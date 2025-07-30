@@ -17,7 +17,7 @@ namespace WebFormsEntraID
             app.SetDefaultSignInAsAuthenticationType("Cookies");
 
             app.UseCookieAuthentication(new CookieAuthenticationOptions());
-
+             
             app.UseOpenIdConnectAuthentication(new OpenIdConnectAuthenticationOptions
             {
                 ClientId = "8218f4dc-8583-45b0-a3aa-8750a9f555d9",
