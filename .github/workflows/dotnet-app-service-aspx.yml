@@ -19,9 +19,6 @@ jobs:
       ARM_USE_OIDC: true
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: '4.8.x'
 
       - run: dotnet publish -c Release -o ./publish
 
