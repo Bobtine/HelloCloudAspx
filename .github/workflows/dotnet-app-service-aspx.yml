@@ -26,24 +26,29 @@ jobs:
 
       - name: Build and publish solution
         run: |
-          # Utilisez le chemin relatif pour la publication
-          msbuild HelloCloudAspx.sln `
+          # Utilisez le chemin du projet directement
+          msbuild HelloCloudAspx\HelloCloudAspx.csproj `
           /p:Configuration=Release `
           /p:DeployOnBuild=true `
           /p:PublishProfile=FolderProfile `
-          /p:DeployDefaultTarget=WebPublish `
           /p:WebPublishMethod=FileSystem `
-          /p:publishUrl=".\publish" `
-          /p:DeleteExistingFiles=True
+          /p:publishUrl="publish" `
+          /p:DeleteExistingFiles=True `
+          /p:DeployDefaultTarget=WebPublish
 
-      - name: Verify publish directory
+      - name: Verify files
         run: |
-          echo "Contenu du répertoire racine :"
-          dir
-          echo "Contenu de publish :"
-          if (Test-Path publish) { dir publish } else { echo "Dossier publish non trouvé!" }
+          echo "Contenu du répertoire HelloCloudAspx :"
+          dir HelloCloudAspx
+          echo "Contenu du dossier publish :"
+          if (Test-Path HelloCloudAspx\publish) { 
+            dir HelloCloudAspx\publish 
+          } else { 
+            echo "Dossier publish non trouvé dans HelloCloudAspx!" 
+          }
 
       - name: Compress published folder
+        working-directory: ./HelloCloudAspx
         run: |
           if (Test-Path publish) {
             Compress-Archive -Path "publish\*" -DestinationPath published.zip
@@ -63,4 +68,4 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
-          package: published.zip
+          package: ./HelloCloudAspx/published.zip
