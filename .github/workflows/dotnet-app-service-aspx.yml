@@ -18,19 +18,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup .NET Framework
+        uses: microsoft/setup-msbuild@v1
+        with:
+          vs-version: '17.0'  # Version pour Visual Studio 2022
+
       - name: Publish using aspnet_compiler
         shell: pwsh
         run: |
-          # Créer le répertoire de publication
           $outputDir = "publish_output"
           New-Item -ItemType Directory -Path $outputDir -Force
           
-          # Trouver le chemin de aspnet_compiler
-          $compilerPath = if (Test-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Roslyn\aspnet_compiler.exe") {
-              "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Roslyn\aspnet_compiler.exe"
-          } else {
-              "${env:ProgramFiles(x86)}\MSBuild\14.0\Bin\aspnet_compiler.exe"
+          # Chemin corrigé pour aspnet_compiler
+          $compilerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\aspnet_compiler.exe"
+          
+          if (-not (Test-Path $compilerPath)) {
+              $compilerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin\aspnet_compiler.exe"
           }
+          
+          if (-not (Test-Path $compilerPath)) {
+              Write-Error "aspnet_compiler.exe introuvable!"
+              Get-ChildItem -Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio" -Recurse -Filter "aspnet_compiler.exe" | Select-Object -First 1 -ExpandProperty FullName
+              exit 1
+          }
+          
+          Write-Host "Utilisation de aspnet_compiler à: $compilerPath"
           
           # Compiler le projet
           & "$compilerPath" -v / -p HelloCloudAspx -f -d $outputDir
