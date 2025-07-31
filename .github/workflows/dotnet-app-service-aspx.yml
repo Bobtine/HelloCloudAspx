@@ -26,10 +26,17 @@ jobs:
         uses: microsoft/setup-msbuild@v1.3.1
 
       - name: Build and publish ASP.NET Web Forms
-        run: msbuild HelloCloudAspx.sln /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:publishUrl=publish
+        run: |
+          msbuild HelloCloudAspx.sln /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:publishUrl=.\publish
+          dir .\publish
 
       - name: Zip published folder
-        run: Compress-Archive -Path publish\* -DestinationPath published.zip
+        run: |
+          if (Test-Path "publish") {
+            Compress-Archive -Path publish\* -DestinationPath published.zip
+          } else {
+            Write-Error "Le dossier publish n'existe pas."
+          }
 
       - name: Azure Login
         uses: azure/login@v1
