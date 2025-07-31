@@ -5,10 +5,6 @@ on:
     branches:
       - HelloAspx
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   build-and-deploy:
     runs-on: windows-latest
@@ -34,15 +30,15 @@ jobs:
           /p:Configuration=Release `
           /p:DeployOnBuild=true `
           /p:PublishProfile=FolderProfile `
-          /p:DeployDefaultTarget=WebPublish `
-          /p:WebPublishMethod=FileSystem `
-          /p:publishUrl="$(System.DefaultWorkingDirectory)/publish"
+          /p:publishUrl="$env:GITHUB_WORKSPACE\publish"
 
-      - name: Show publish folder content
-        run: dir publish
+      - name: Verify publish directory
+        run: |
+          echo "Contenu de publish :"
+          dir "$env:GITHUB_WORKSPACE\publish"
 
       - name: Compress published folder
-        run: Compress-Archive -Path publish/* -DestinationPath published.zip
+        run: Compress-Archive -Path "$env:GITHUB_WORKSPACE\publish\*" -DestinationPath published.zip
 
       - name: Login to Azure
         uses: azure/login@v1
