@@ -3,7 +3,7 @@ name: Deploy HelloCloudAspx to Azure
 on:
   push:
     branches:
-      - HelloAspx  # adapte ici si ta branche s'appelle autrement
+      - HelloAspx
 
 permissions:
   id-token: write
@@ -28,17 +28,21 @@ jobs:
       - name: Restore NuGet packages
         run: nuget restore HelloCloudAspx.sln
 
-      - name: Build and publish (Web Forms)
-        working-directory: ./HelloCloudAspx
-        run: msbuild HelloCloudAspx.csproj /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
+      - name: Build and publish solution
+        run: |
+          msbuild HelloCloudAspx.sln `
+          /p:Configuration=Release `
+          /p:DeployOnBuild=true `
+          /p:PublishProfile=FolderProfile `
+          /p:DeployDefaultTarget=WebPublish `
+          /p:WebPublishMethod=FileSystem `
+          /p:publishUrl="$(System.DefaultWorkingDirectory)/publish"
 
-      - name: Show publish folder content for debug
-        working-directory: ./HelloCloudAspx
+      - name: Show publish folder content
         run: dir publish
 
       - name: Compress published folder
-        working-directory: ./HelloCloudAspx
-        run: Compress-Archive -Path publish\* -DestinationPath published.zip
+        run: Compress-Archive -Path publish/* -DestinationPath published.zip
 
       - name: Login to Azure
         uses: azure/login@v1
