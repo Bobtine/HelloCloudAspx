@@ -5,10 +5,6 @@ on:
     branches:
       - HelloAspx
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   build-and-deploy:
     runs-on: windows-latest
@@ -30,19 +26,31 @@ jobs:
 
       - name: Build and publish solution
         run: |
+          # Utilisez le chemin relatif pour la publication
           msbuild HelloCloudAspx.sln `
           /p:Configuration=Release `
           /p:DeployOnBuild=true `
           /p:PublishProfile=FolderProfile `
           /p:DeployDefaultTarget=WebPublish `
           /p:WebPublishMethod=FileSystem `
-          /p:publishUrl="$(System.DefaultWorkingDirectory)/publish"
+          /p:publishUrl=".\publish" `
+          /p:DeleteExistingFiles=True
 
-      - name: Show publish folder content
-        run: dir publish
+      - name: Verify publish directory
+        run: |
+          echo "Contenu du répertoire racine :"
+          dir
+          echo "Contenu de publish :"
+          if (Test-Path publish) { dir publish } else { echo "Dossier publish non trouvé!" }
 
       - name: Compress published folder
-        run: Compress-Archive -Path publish/* -DestinationPath published.zip
+        run: |
+          if (Test-Path publish) {
+            Compress-Archive -Path "publish\*" -DestinationPath published.zip
+          } else {
+            Write-Error "Le dossier publish n'existe pas, impossible de compresser"
+            exit 1
+          }
 
       - name: Login to Azure
         uses: azure/login@v1
