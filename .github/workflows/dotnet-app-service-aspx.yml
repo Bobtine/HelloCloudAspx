@@ -20,18 +20,7 @@ jobs:
 
       - name: Create publish profile
         run: |
-          $publishProfile = @"
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <WebPublishMethod>FileSystem</WebPublishMethod>
-    <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>
-    <publishUrl>.\publish</publishUrl>
-    <DeleteExistingFiles>True</DeleteExistingFiles>
-    <ExcludeApp_Data>False</ExcludeApp_Data>
-    <AutoParameterizationWebConfigConnectionStrings>False</AutoParameterizationWebConfigConnectionStrings>
-  </PropertyGroup>
-</Project>
-"@
+          $publishProfile = @"<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"><PropertyGroup> <WebPublishMethod>FileSystem</WebPublishMethod> <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>   <publishUrl>.\publish</publishUrl><DeleteExistingFiles>True</DeleteExistingFiles><ExcludeApp_Data>False</ExcludeApp_Data> <AutoParameterizationWebConfigConnectionStrings>False</AutoParameterizationWebConfigConnectionStrings></PropertyGroup></Project>"@
           # Crée le dossier de profil de publication
           New-Item -Path "HelloCloudAspx\Properties" -Name "PublishProfiles" -ItemType Directory -Force
           $publishProfile | Out-File -FilePath "HelloCloudAspx\Properties\PublishProfiles\FolderProfile.pubxml" -Encoding utf8
