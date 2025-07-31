@@ -16,45 +16,32 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Create publish profile
+      - name: Publish using aspnet_compiler
+        shell: pwsh
         run: |
-          $publishProfile = @"<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003"><PropertyGroup> <WebPublishMethod>FileSystem</WebPublishMethod> <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>   <publishUrl>.\publish</publishUrl><DeleteExistingFiles>True</DeleteExistingFiles><ExcludeApp_Data>False</ExcludeApp_Data> <AutoParameterizationWebConfigConnectionStrings>False</AutoParameterizationWebConfigConnectionStrings></PropertyGroup></Project>"@
-          # Crée le dossier de profil de publication
-          New-Item -Path "HelloCloudAspx\Properties" -Name "PublishProfiles" -ItemType Directory -Force
-          $publishProfile | Out-File -FilePath "HelloCloudAspx\Properties\PublishProfiles\FolderProfile.pubxml" -Encoding utf8
-
-      - name: Publish web application
-        run: |
-          # Utilise MSBuild pour publier le site web
-          msbuild `
-          /t:WebPublish `
-          /p:Configuration=Release `
-          /p:DeployOnBuild=true `
-          /p:PublishProfile=FolderProfile `
-          /p:WebPublishMethod=FileSystem `
-          /p:publishUrl="publish" `
-          /p:DeleteExistingFiles=True `
-          /p:VisualStudioVersion=16.0 `
-          /p:WebProjectRootDir="$pwd\HelloCloudAspx" `
-          /p:ProjectName="HelloCloudAspx"
+          # Créer le répertoire de publication
+          $outputDir = "publish_output"
+          New-Item -ItemType Directory -Path $outputDir -Force
+          
+          # Trouver le chemin de aspnet_compiler
+          $compilerPath = if (Test-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Roslyn\aspnet_compiler.exe") {
+              "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\Roslyn\aspnet_compiler.exe"
+          } else {
+              "${env:ProgramFiles(x86)}\MSBuild\14.0\Bin\aspnet_compiler.exe"
+          }
+          
+          # Compiler le projet
+          & "$compilerPath" -v / -p HelloCloudAspx -f -d $outputDir
 
       - name: Verify publish directory
         run: |
-          echo "Contenu du dossier publish :"
-          if (Test-Path "HelloCloudAspx\publish") { 
-            dir "HelloCloudAspx\publish"
-          } else { 
-            Write-Error "Dossier publish non trouvé!" 
-            # Debug: Afficher la structure complète
-            Get-ChildItem -Recurse | Format-Table FullName
-            exit 1
-          }
+          echo "Contenu du dossier publish_output :"
+          dir publish_output
 
       - name: Compress published folder
-        run: |
-          Compress-Archive -Path "HelloCloudAspx\publish\*" -DestinationPath published.zip
+        run: Compress-Archive -Path "publish_output/*" -DestinationPath published.zip
 
       - name: Login to Azure
         uses: azure/login@v1
