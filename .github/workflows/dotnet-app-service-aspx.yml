@@ -1,9 +1,9 @@
-name: Deploy HelloCloud-Aspx to Azure
+name: Deploy HelloCloudAspx to Azure
 
 on:
   push:
     branches:
-      - HelloAspx
+      - HelloAspx  # Change si ta branche est différente
 
 permissions:
   id-token: write
@@ -22,30 +22,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.3.1
+      - name: Restore NuGet packages
+        run: nuget restore HelloCloudAspx.sln
 
-      - name: Build and publish ASP.NET Web Forms
+      - name: Build and publish (Web Forms)
         run: |
-          msbuild HelloCloudAspx.sln /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:publishUrl=.\publish
-          dir .\publish
+          msbuild HelloCloudAspx.sln `
+            /p:Configuration=Release `
+            /p:DeployOnBuild=true `
+            /p:PublishProfile=FolderProfile
 
-      - name: Zip published folder
-        run: |
-          if (Test-Path "publish") {
-            Compress-Archive -Path publish\* -DestinationPath published.zip
-          } else {
-            Write-Error "Le dossier publish n'existe pas."
-          }
+      - name: Compress published folder
+        run: Compress-Archive -Path publish\* -DestinationPath published.zip
 
-      - name: Azure Login
+      - name: Login to Azure
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure App Service
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
