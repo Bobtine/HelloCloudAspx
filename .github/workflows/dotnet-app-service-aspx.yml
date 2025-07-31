@@ -29,13 +29,16 @@ jobs:
         run: nuget restore HelloCloudAspx.sln
 
       - name: Build and publish (Web Forms)
-        run: msbuild HelloCloudAspx.sln /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
+        working-directory: ./HelloCloudAspx
+        run: msbuild HelloCloudAspx.csproj /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
 
       - name: Show publish folder content for debug
-        run: dir HelloCloudAspx\publish
+        working-directory: ./HelloCloudAspx
+        run: dir publish
 
       - name: Compress published folder
-        run: Compress-Archive -Path HelloCloudAspx\publish\* -DestinationPath published.zip
+        working-directory: ./HelloCloudAspx
+        run: Compress-Archive -Path publish\* -DestinationPath published.zip
 
       - name: Login to Azure
         uses: azure/login@v1
