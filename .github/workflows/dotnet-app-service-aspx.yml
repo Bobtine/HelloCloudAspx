@@ -18,51 +18,54 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v1.3.1
-
-      - name: Find web application project
-        id: find-webapp
+      - name: Create publish profile
         run: |
-          # Recherche le premier fichier .aspx pour déterminer le projet
-          $aspxFile = Get-ChildItem -Path . -Recurse -Filter *.aspx | Select-Object -First 1
-          if (-not $aspxFile) {
-            Write-Error "Aucun fichier .aspx trouvé - projet invalide"
-            exit 1
-          }
-          $projectDir = $aspxFile.Directory.FullName
-          echo "::set-output name=projectDir::$projectDir"
-          echo "Dossier du projet: $projectDir"
+          $publishProfile = @"
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <WebPublishMethod>FileSystem</WebPublishMethod>
+    <LastUsedBuildConfiguration>Release</LastUsedBuildConfiguration>
+    <publishUrl>.\publish</publishUrl>
+    <DeleteExistingFiles>True</DeleteExistingFiles>
+    <ExcludeApp_Data>False</ExcludeApp_Data>
+    <AutoParameterizationWebConfigConnectionStrings>False</AutoParameterizationWebConfigConnectionStrings>
+  </PropertyGroup>
+</Project>
+"@
+          # Crée le dossier de profil de publication
+          New-Item -Path "HelloCloudAspx\Properties" -Name "PublishProfiles" -ItemType Directory -Force
+          $publishProfile | Out-File -FilePath "HelloCloudAspx\Properties\PublishProfiles\FolderProfile.pubxml" -Encoding utf8
 
-      - name: Build and publish application
+      - name: Publish web application
         run: |
-          # Utilise le chemin du projet trouvé précédemment
-          $projectDir = "${{ steps.find-webapp.outputs.projectDir }}"
-          msbuild "$projectDir" `
+          # Utilise MSBuild pour publier le site web
+          msbuild `
+          /t:WebPublish `
           /p:Configuration=Release `
           /p:DeployOnBuild=true `
           /p:PublishProfile=FolderProfile `
           /p:WebPublishMethod=FileSystem `
           /p:publishUrl="publish" `
           /p:DeleteExistingFiles=True `
-          /p:DeployDefaultTarget=WebPublish `
-          /p:VisualStudioVersion=16.0
+          /p:VisualStudioVersion=16.0 `
+          /p:WebProjectRootDir="$pwd\HelloCloudAspx" `
+          /p:ProjectName="HelloCloudAspx"
 
       - name: Verify publish directory
         run: |
-          $projectDir = "${{ steps.find-webapp.outputs.projectDir }}"
-          echo "Contenu de $projectDir\publish :"
-          if (Test-Path "$projectDir\publish") { 
-            dir "$projectDir\publish"
+          echo "Contenu du dossier publish :"
+          if (Test-Path "HelloCloudAspx\publish") { 
+            dir "HelloCloudAspx\publish"
           } else { 
             Write-Error "Dossier publish non trouvé!" 
+            # Debug: Afficher la structure complète
+            Get-ChildItem -Recurse | Format-Table FullName
             exit 1
           }
 
       - name: Compress published folder
         run: |
-          $projectDir = "${{ steps.find-webapp.outputs.projectDir }}"
-          Compress-Archive -Path "$projectDir\publish\*" -DestinationPath published.zip
+          Compress-Archive -Path "HelloCloudAspx\publish\*" -DestinationPath published.zip
 
       - name: Login to Azure
         uses: azure/login@v1
