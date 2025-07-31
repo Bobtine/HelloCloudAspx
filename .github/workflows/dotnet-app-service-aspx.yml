@@ -25,11 +25,11 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.3.1
 
-      - name: Build solution
-        run: msbuild HelloCloudAspx.sln /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FolderProfile /p:WebPublishMethod=FileSystem /p:publishUrl="$(Build.ArtifactStagingDirectory)"
+      - name: Build and publish ASP.NET Web Forms
+        run: msbuild HelloCloudAspx.sln /p:Configuration=Release /p:DeployOnBuild=true /p:WebPublishMethod=FileSystem /p:publishUrl=publish
 
-      - name: Zip publish folder
-        run: Compress-Archive -Path "$(Build.ArtifactStagingDirectory)\*" -DestinationPath published.zip
+      - name: Zip published folder
+        run: Compress-Archive -Path publish\* -DestinationPath published.zip
 
       - name: Azure Login
         uses: azure/login@v1
