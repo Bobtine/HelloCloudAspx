@@ -3,7 +3,7 @@ name: Deploy HelloCloudAspx to Azure
 on:
   push:
     branches:
-      - HelloAspx  # Change si ta branche est différente
+      - HelloAspx
 
 permissions:
   id-token: write
@@ -22,15 +22,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v1.3.1
+
       - name: Restore NuGet packages
         run: nuget restore HelloCloudAspx.sln
 
       - name: Build and publish (Web Forms)
         run: |
-          msbuild HelloCloudAspx.sln `
-            /p:Configuration=Release `
-            /p:DeployOnBuild=true `
-            /p:PublishProfile=FolderProfile
+          msbuild HelloCloudAspx.sln /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FolderProfile
 
       - name: Compress published folder
         run: Compress-Archive -Path publish\* -DestinationPath published.zip
