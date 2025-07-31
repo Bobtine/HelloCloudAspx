@@ -21,41 +21,48 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v1.3.1
 
-      - name: Restore NuGet packages
-        run: nuget restore HelloCloudAspx.sln
-
-      - name: Build and publish solution
+      - name: Find web application project
+        id: find-webapp
         run: |
-          # Utilisez le chemin du projet directement
-          msbuild HelloCloudAspx\HelloCloudAspx.csproj `
+          # Recherche le premier fichier .aspx pour déterminer le projet
+          $aspxFile = Get-ChildItem -Path . -Recurse -Filter *.aspx | Select-Object -First 1
+          if (-not $aspxFile) {
+            Write-Error "Aucun fichier .aspx trouvé - projet invalide"
+            exit 1
+          }
+          $projectDir = $aspxFile.Directory.FullName
+          echo "::set-output name=projectDir::$projectDir"
+          echo "Dossier du projet: $projectDir"
+
+      - name: Build and publish application
+        run: |
+          # Utilise le chemin du projet trouvé précédemment
+          $projectDir = "${{ steps.find-webapp.outputs.projectDir }}"
+          msbuild "$projectDir" `
           /p:Configuration=Release `
           /p:DeployOnBuild=true `
           /p:PublishProfile=FolderProfile `
           /p:WebPublishMethod=FileSystem `
           /p:publishUrl="publish" `
           /p:DeleteExistingFiles=True `
-          /p:DeployDefaultTarget=WebPublish
+          /p:DeployDefaultTarget=WebPublish `
+          /p:VisualStudioVersion=16.0
 
-      - name: Verify files
+      - name: Verify publish directory
         run: |
-          echo "Contenu du répertoire HelloCloudAspx :"
-          dir HelloCloudAspx
-          echo "Contenu du dossier publish :"
-          if (Test-Path HelloCloudAspx\publish) { 
-            dir HelloCloudAspx\publish 
+          $projectDir = "${{ steps.find-webapp.outputs.projectDir }}"
+          echo "Contenu de $projectDir\publish :"
+          if (Test-Path "$projectDir\publish") { 
+            dir "$projectDir\publish"
           } else { 
-            echo "Dossier publish non trouvé dans HelloCloudAspx!" 
+            Write-Error "Dossier publish non trouvé!" 
+            exit 1
           }
 
       - name: Compress published folder
-        working-directory: ./HelloCloudAspx
         run: |
-          if (Test-Path publish) {
-            Compress-Archive -Path "publish\*" -DestinationPath published.zip
-          } else {
-            Write-Error "Le dossier publish n'existe pas, impossible de compresser"
-            exit 1
-          }
+          $projectDir = "${{ steps.find-webapp.outputs.projectDir }}"
+          Compress-Archive -Path "$projectDir\publish\*" -DestinationPath published.zip
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -68,4 +75,4 @@ jobs:
         uses: azure/webapps-deploy@v2
         with:
           app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
-          package: ./HelloCloudAspx/published.zip
+          package: published.zip
