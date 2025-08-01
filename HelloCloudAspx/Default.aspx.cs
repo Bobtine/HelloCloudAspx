@@ -9,6 +9,13 @@ public partial class _Default : Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-
+        if (!Request.IsAuthenticated)
+        {
+            HttpContext.Current.GetOwinContext().Authentication.Challenge(
+                new Microsoft.Owin.Security.AuthenticationProperties { RedirectUri = "/" },
+                Microsoft.Owin.Security.OpenIdConnect.OpenIdConnectAuthenticationDefaults.AuthenticationType);
+            Response.StatusCode = 401;
+            Response.End();
+        }
     }
 }
